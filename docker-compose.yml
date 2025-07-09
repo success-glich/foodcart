@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Development service
+  foodcart-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foodcart-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=https://forkify-api.herokuapp.com/api/v2
+    stdin_open: true
+    tty: true
+    networks:
+      - foodcart-network
+
+  # Production service
+  foodcart-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: foodcart-prod
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=https://forkify-api.herokuapp.com/api/v2
+    networks:
+      - foodcart-network
+    profiles:
+      - production
+
+networks:
+  foodcart-network:
+    driver: bridge
+
+volumes:
+  node_modules:
