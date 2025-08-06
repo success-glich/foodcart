@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clone') {
+            steps {
+                echo 'Cloning'
+                git 'https://github.com/RohanKhanal14/foodcart.git'
+                echo 'Cloning successful'
+            }
+        }
+        stage('Build') {
+            steps {
+                echo 'Building Docker Images'
+                sh 'docker build -t foodcart:latest .'
+            }
+        }
+        stage('DockerHub') {
+            steps {
+        withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'dockerHubUser', passwordVariable: 'dockerHubPass')]) {
+            sh '''
+                docker login -u "$dockerHubUser" -p "$dockerHubPass"
+                docker image tag foodcart:latest "$dockerHubUser/foodcart:latest"
+                docker push "$dockerHubUser/foodcart:latest"
+            '''
+        }
+    }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'docker run -d -p 3000:3000 rohankhanal14/foodcart'
+            }
+        }
+    }
+}
