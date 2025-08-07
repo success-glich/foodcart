@@ -2,10 +2,10 @@
 pipeline {
     agent any
     
-    environment{
-         SONAR_HOME = tool "Sonar"
+    environment {
+        SONAR_HOME = tool "Sonarqube"
     }
-        
+
     stages {
         
         stage('Git Clone') {
@@ -16,24 +16,24 @@ pipeline {
             }
         }
         
-        stage('trivy') {
+        stage('Trivy Scan') {
             steps {
                 sh "trivy fs ."
             }
         }
         
-        // stage('owasp') {
+        // stage('OWASP') {
         //     steps {
         //         dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'OWASP'
         //         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
         //     }
         // }
-
-        stage('sonar') {
+        
+        stage('Sonar Scan') {
             steps {
-               withSonarQubeEnv("Sonar"){
-                sh "$SONAR_HOME/bin/sonar-scanner -Dsonar.projectName=foodcart -Dsonar.projectKey=foodcart -X"
-                } 
+                withSonarQubeEnv("Sonarqube"){
+                    sh "$SONAR_HOME/bin/sonar-scanner -Dsonar.projectName=FoodCart -Dsonar.projectKey=FoodCart -X" 
+                }
             }
         }
         
@@ -54,9 +54,33 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Delopy using docker"
-                sh 'docker run -d -p 3000:3000 rohankhanal14/foodcart:v2'
+                sh 'docker run -d -p 3003:3000 rohankhanal14/foodcart:v2'
             }
         }
-        
     }
+    
+post {
+    success{
+        emailext(
+            to:"rohankhanal14r@gmail.com",
+            from:"rohankhanal14r@gmail.com",
+            subject:"Build and Deployed Successfully",
+            body: """ <p>The jenkins bulid <b>${env.JOB_NAME}</b> is Successfully Dployed and its bulid number is <b>${env.BUILD_NUMBER}</b></p>""",
+            attachLog: true,
+            mimeType: 'text/html'
+            )
+    }
+    failure{
+        emailext(
+            to:"rohankhanal14r@gmail.com",
+            from:"rohankhanal14r@gmail.com",
+            subject:"Build Failure",
+            body: """ <p>The jenkins bulid <b>${env.JOB_NAME}</b> Build Failed and its build number is <b>${env.BUILD_NUMBER}</b></p>""",
+            attachLog: true,
+            mimeType: 'text/html'
+            )
+    }
+}    
 }
+
+
