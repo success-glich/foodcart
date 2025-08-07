@@ -3,14 +3,18 @@ import { NavLink } from "react-router-dom";
 import { GlobalContext } from "../../context";
 
 export default function Navbar() {
-  const { searchParam, setSearchParam , handleSubmit } = useContext(GlobalContext);
+  const { searchParam, setSearchParam, handleSubmit } =
+    useContext(GlobalContext);
 
   console.log(searchParam);
 
   return (
     <nav className="flex justify-between items-center py-8 container mx-auto flex-col lg:flex-row gap-5 lg:gap-0">
       <h2 className="text-2xl font-semibold">
-        <NavLink to={"/"}>FoodRecipe</NavLink>
+        <NavLink to={"/"}>
+          Hi this is an example for github webhook and auto build and deploy
+          using jenkins
+        </NavLink>
       </h2>
       <form onSubmit={handleSubmit}>
         <input

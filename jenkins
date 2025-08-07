@@ -1,36 +1,62 @@
+@Library ("Shared") _
 pipeline {
     agent any
-
+    
+    environment{
+         SONAR_HOME = tool "Sonar"
+    }
+        
     stages {
-        stage('Clone') {
+        
+        stage('Git Clone') {
             steps {
-                echo 'Cloning'
-                git 'https://github.com/RohanKhanal14/foodcart.git'
-                echo 'Cloning successful'
+                echo "cloning the project"
+                git_clone("https://github.com/RohanKhanal14/foodcart.git")
+                echo "clone successful"
             }
         }
+        
+        stage('trivy') {
+            steps {
+                sh "trivy fs ."
+            }
+        }
+        
+        // stage('owasp') {
+        //     steps {
+        //         dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'OWASP'
+        //         dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        //     }
+        // }
+
+        stage('sonar') {
+            steps {
+               withSonarQubeEnv("Sonar"){
+                sh "$SONAR_HOME/bin/sonar-scanner -Dsonar.projectName=foodcart -Dsonar.projectKey=foodcart -X"
+                } 
+            }
+        }
+        
         stage('Build') {
             steps {
-                echo 'Building Docker Images'
-                sh 'docker build -t foodcart:latest .'
+                echo "Building Docker Images"
+                sh 'docker build -t rohankhanal14/foodcart:v2 .'
+                echo "Docker build successful"
             }
         }
+        
         stage('DockerHub') {
             steps {
-        withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'dockerHubUser', passwordVariable: 'dockerHubPass')]) {
-            sh '''
-                docker login -u "$dockerHubUser" -p "$dockerHubPass"
-                docker image tag foodcart:latest "$dockerHubUser/foodcart:latest"
-                docker push "$dockerHubUser/foodcart:latest"
-            '''
-        }
-    }
-        }
-
-        stage('Deploy') {
-            steps {
-                sh 'docker run -d -p 3000:3000 rohankhanal14/foodcart:latest'
+                docker_hub("foodcart", "v2")
             }
         }
+        
+        stage('Deploy') {
+            steps {
+                echo "Delopy using docker"
+                sh 'docker run -d -p 3000:3000 rohankhanal14/foodcart:v2'
+            }
+        }
+        
     }
 }
